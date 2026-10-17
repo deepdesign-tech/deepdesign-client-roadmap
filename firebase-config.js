@@ -1,6 +1,7 @@
-// Firebase web app configuration (public client identifiers, not a service-account key).
+// Firebase web app configuration copied directly from Firebase Console.
+// These are public client identifiers; never add service-account private keys here.
 window.DEEPDESIGN_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDtE0c7Y4I7wi63T9jeYg0vhwDhXe97lp0",
+  apiKey: "AIzaSyDtEOc7Y4I7wi63T9jeYgOvhwDhXe97lp0",
   authDomain: "deepdesign-client-roadmap.firebaseapp.com",
   projectId: "deepdesign-client-roadmap",
   storageBucket: "deepdesign-client-roadmap.firebasestorage.app",
