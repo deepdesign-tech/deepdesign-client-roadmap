@@ -37,8 +37,8 @@ service cloud.firestore {
     function validProjectShape() {
       return request.resource.data.keys().hasAll(['name', 'phases', 'kpi', 'notes'])
         && request.resource.data.keys().hasOnly([
-          'name', 'phases', 'kpi', 'notes', 'status',
-          'createdAt', 'createdBy', 'updatedAt'
+          'name', 'phases', 'phaseDefinitions', 'phaseSchemaVersion',
+          'kpi', 'notes', 'status', 'createdAt', 'createdBy', 'updatedAt'
         ])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
@@ -47,6 +47,11 @@ service cloud.firestore {
         && request.resource.data.kpi is map
         && request.resource.data.notes is string
         && request.resource.data.notes.size() <= 10000
+        && (!request.resource.data.keys().hasAny(['phaseDefinitions'])
+          || (request.resource.data.phaseDefinitions is list
+            && request.resource.data.phaseDefinitions.size() <= 30))
+        && (!request.resource.data.keys().hasAny(['phaseSchemaVersion'])
+          || request.resource.data.phaseSchemaVersion is int)
         && (!request.resource.data.keys().hasAny(['status'])
           || request.resource.data.status in ['active', 'paused', 'archived']);
     }
@@ -69,17 +74,14 @@ service cloud.firestore {
     }
 
     match /members/{uid} {
-      // Users may read their own access record. Admin can query all managed clients.
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow list: if isAdmin();
 
-      // Admin UI can create only Viewer/Editor records, never another Admin.
       allow create: if isAdmin()
         && uid != request.auth.uid
         && validManagedMember()
         && request.resource.data.projects.size() > 0;
 
-      // Admin UI can change Viewer/Editor access and project assignments.
       allow update: if isAdmin()
         && uid != request.auth.uid
         && resource.data.role != 'admin'
@@ -96,10 +98,11 @@ service cloud.firestore {
       allow get: if isAdmin() || assigned(projectId);
       allow list: if isAdmin();
 
-      // Global DeepDesign admins can create projects directly from the web app.
+      // Admin can create a project and define its dynamic Roadmap structure.
       allow create: if isAdmin() && validProjectShape();
 
-      // Admin can manage project settings/content. Editors can change Roadmap content only.
+      // Only Admin can change project settings / phaseDefinitions.
+      // Editors can update progress, KPI and notes but cannot alter the Roadmap structure.
       allow update: if (isAdmin() && validProjectShape())
         || (editor(projectId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
