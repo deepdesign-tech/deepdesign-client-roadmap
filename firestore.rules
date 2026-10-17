@@ -2,29 +2,48 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function member() { return get(/databases/$(database)/documents/members/$(request.auth.uid)); }
+    function member() {
+      return get(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+    function hasMember() {
+      return signedIn() && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
     function allowed(projectId) {
-      return signedIn() && exists(/databases/$(database)/documents/members/$(request.auth.uid))
-        && projectId in member().data.projects;
+      return hasMember() && projectId in member().data.projects;
     }
     function editor(projectId) {
       return allowed(projectId) && member().data.role in ['admin', 'editor'];
     }
-    match /members/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid;
-      allow list, create, update, delete: if false;
+    function admin(projectId) {
+      return allowed(projectId) && member().data.role == 'admin';
     }
-    match /projects/{projectId} {
-      allow get: if allowed(projectId);
-      allow list, create, delete: if false;
-      allow update: if editor(projectId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phases', 'kpi', 'notes', 'updatedAt'])
-        && request.resource.data.keys().hasAll(['name','phases','kpi','notes'])
+    function validProjectShape() {
+      return request.resource.data.keys().hasAll(['name', 'phases', 'kpi', 'notes'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
         && request.resource.data.phases is map
         && request.resource.data.kpi is map
         && request.resource.data.notes is string
         && request.resource.data.notes.size() <= 10000;
     }
-    match /{document=**} { allow read, write: if false; }
+
+    match /members/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /projects/{projectId} {
+      allow get: if allowed(projectId);
+      allow list, delete: if false;
+      allow create: if admin(projectId) && validProjectShape();
+      allow update: if editor(projectId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phases', 'kpi', 'notes', 'updatedAt'])
+        && validProjectShape();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
