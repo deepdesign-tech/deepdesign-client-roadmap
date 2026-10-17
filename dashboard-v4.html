@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DeepDesign Client Marketing Roadmap</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f3f6fb;color:#182943}header{background:#112844;color:#fff;padding:24px max(20px,calc((100vw - 1160px)/2))}header small{color:#a9c5e9;letter-spacing:1.5px}h1{font-size:26px;margin:7px 0}main{max-width:1160px;margin:25px auto;padding:0 18px}.card{background:#fff;border:1px solid #e1e7f0;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 4px 18px #18294308}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric{font-size:28px;color:#2059a5;font-weight:800}.muted{color:#66768c;font-size:13px}h2{font-size:20px;margin:26px 0 13px}h3{margin:0 0 10px}p{line-height:1.6}input,select,textarea{font:inherit;width:100%;border:1px solid #d4deec;border-radius:9px;padding:10px;background:#fff;color:#182943}input[type=checkbox]{width:auto;margin-right:8px;accent-color:#187dba}label{display:block;margin:10px 0;font-size:14px}button{border:0;border-radius:10px;padding:11px 17px;background:#215aa4;color:#fff;cursor:pointer;font:inherit}button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#e9eff9;color:#2059a5}.danger{background:#fff1f1;color:#a62237;border:1px solid #f1caca}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.tag{font-size:12px;background:#e7f1ff;color:#245aa3;border-radius:30px;padding:5px 10px}.bar{height:9px;background:#e7edf5;border-radius:9px;overflow:hidden}.fill{height:100%;background:#1da783;transition:width .2s}.tasks{border-top:1px solid #e9edf3;padding-top:10px}.error{color:#a62237}.ok{color:#087c59}.hidden{display:none!important}#login{max-width:450px;margin:45px auto}.admin-card{border:1px solid #cbdcf3}.admin-head{display:flex;gap:10px;align-items:center}.admin-head .tag{background:#132d50;color:#fff}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #e8edf4;font-size:14px;vertical-align:top}th{font-size:12px;color:#66768c;text-transform:uppercase;letter-spacing:.04em}.inline-select{min-width:120px}.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#14a06f;margin-right:6px}.status-dot.off{background:#a9b3c2}.notice{padding:12px 14px;background:#f7f9fc;border:1px solid #e3e9f1;border-radius:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.three{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}.admin-tabs button.active{background:#132d50;color:#fff}.project-chip{display:inline-block;font-size:12px;background:#eef4fc;border:1px solid #d9e5f5;color:#285b9f;padding:4px 8px;border-radius:20px;margin:2px 4px 2px 0}.compact{padding:7px 10px;font-size:13px}.project-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.project-tile{border:1px solid #e1e7f0;border-radius:12px;padding:14px;background:#fbfcfe}.project-tile strong{display:block;margin-bottom:5px}.project-tile.active-project{border-color:#7ea7dc;background:#f4f8fe}@media(max-width:800px){.metrics,.grid,.two,.three,.project-list{grid-template-columns:1fr 1fr}}@media(max-width:520px){.metrics,.grid,.two,.three,.project-list{grid-template-columns:1fr}h1{font-size:22px}}
+  </style>
+</head>
+<body>
+<header>
+  <small>DEEPDESIGN · CLIENT WORKSPACE</small>
+  <h1>Client Marketing Roadmap</h1>
+  <div class="row"><span>Multi-project · Real-time · Client Access</span><span id="identity"></span></div>
+</header>
+<main>
+  <section id="setup" class="card hidden"><h2>Firebase ยังไม่พร้อม</h2><p>กรุณาตรวจสอบ <code>firebase-config.js</code></p></section>
+  <section id="login" class="card hidden">
+    <h2>เข้าสู่ระบบ</h2><p class="muted">สำหรับทีม DeepDesign และลูกค้าที่ได้รับสิทธิ์</p>
+    <form id="loginForm"><label>อีเมล<input id="email" type="email" required autocomplete="username"></label><label>รหัสผ่าน<input id="password" type="password" required autocomplete="current-password"></label><button type="submit">เข้าสู่ระบบ</button></form>
+    <p id="loginError" class="error" role="alert"></p>
+  </section>
+
+  <section id="workspace" class="hidden">
+    <div class="card row"><div><strong id="clientTitle">Client Roadmap</strong><div class="muted" id="roleText"></div></div><div class="row"><select id="project" aria-label="เลือกโครงการ" style="min-width:280px"></select><button id="logout" class="secondary">ออกจากระบบ</button></div></div>
+    <div class="card"><div class="row"><strong>ความคืบหน้า</strong><strong id="percent">0%</strong></div><div class="bar" style="margin:12px 0"><div id="fill" class="fill"></div></div><div class="muted" id="sync">กำลังเชื่อมต่อข้อมูล...</div></div>
+    <div class="metrics"><div class="card"><div class="muted">ขั้นตอนเสร็จ</div><div id="done" class="metric">0/4</div></div><div class="card"><div class="muted">TikTok</div><div id="tikMetric" class="metric">0</div></div><div class="card"><div class="muted">Facebook</div><div id="fbMetric" class="metric">0/15</div></div><div class="card"><div class="muted">Repost</div><div id="repMetric" class="metric">0</div></div></div>
+
+    <h2>Roadmap & Checklist</h2><div id="phases" class="grid"></div>
+    <h2>KPI & Advertising</h2>
+    <section class="card"><div class="grid"><label>คลิป TikTok<input data-field="tiktok" type="number" min="0"></label><label>Facebook Posts (เป้าหมาย 15)<input data-field="posts" type="number" min="0"></label><label>Repost ลง Facebook<input data-field="reposts" type="number" min="0"></label><label>งบโฆษณา (บาท)<input data-field="budget" type="number" min="0"></label><label>Top Content อันดับ 1<input data-field="top1"></label><label>Top Content อันดับ 2<input data-field="top2"></label></div><button id="saveKpi">บันทึก KPI</button></section>
+    <h2>Meeting Notes</h2><section class="card"><textarea data-field="notes" rows="5" placeholder="ประเด็นประชุมและสิ่งที่ต้องติดตาม"></textarea><p><button id="saveNotes">บันทึก Notes</button></p></section>
+    <p id="message" role="status"></p>
+
+    <section id="adminPanel" class="hidden">
+      <h2>Admin Workspace</h2>
+
+      <div class="card admin-card">
+        <div class="admin-head"><span class="tag">PROJECTS</span><strong>สร้างและตั้งค่า Project</strong></div>
+        <p class="muted">Admin สามารถสร้าง Project ใหม่จากเว็บได้ทันที ทุก Project จะเริ่มจาก Roadmap Template 4 ขั้นตอนเดียวกัน</p>
+        <form id="projectCreateForm">
+          <div class="three">
+            <label>ชื่อ Project / ลูกค้า<input id="newProjectName" required maxlength="120" placeholder="เช่น ABC Clinic — Q4 Marketing"></label>
+            <label>Project ID<input id="newProjectId" required maxlength="80" placeholder="abc-clinic-q4"></label>
+            <label>สถานะ<select id="newProjectStatus"><option value="active">Active</option><option value="paused">Paused</option></select></label>
+          </div>
+          <button type="submit">สร้าง Project ใหม่</button>
+        </form>
+        <p id="projectMessage" class="muted" role="status"></p>
+        <div id="projectTiles" class="project-list"></div>
+      </div>
+
+      <div class="card admin-card">
+        <div class="admin-head"><span class="tag">SETTINGS</span><strong>ตั้งค่า Project ที่เลือก</strong></div>
+        <div class="three">
+          <label>ชื่อ Project<input id="editProjectName" maxlength="120"></label>
+          <label>สถานะ<select id="editProjectStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="archived">Archived</option></select></label>
+          <label>Project ID<input id="editProjectId" readonly></label>
+        </div>
+        <button id="saveProjectSettings" type="button">บันทึกการตั้งค่า</button>
+      </div>
+
+      <div class="card admin-card">
+        <div class="admin-head"><span class="tag">ACCESS</span><strong>เพิ่มลูกค้าและกำหนดสิทธิ์</strong></div>
+        <p class="muted">เลือก Project เป้าหมายได้โดยตรง หากอีเมลมีบัญชีอยู่แล้ว ระบบจะเพิ่ม Project ให้บัญชีเดิมโดยไม่สร้างซ้ำ</p>
+        <form id="inviteForm">
+          <div class="two"><label>ชื่อลูกค้า / ธุรกิจ<input id="clientName" maxlength="120" placeholder="เช่น ABC Clinic"></label><label>อีเมลลูกค้า<input id="clientEmail" type="email" required placeholder="client@example.com"></label></div>
+          <div class="two"><label>สิทธิ์<select id="clientRole"><option value="viewer">Viewer — ดูอย่างเดียว</option><option value="editor">Editor — แก้ไข Roadmap ได้</option></select></label><label>ให้เข้า Project<select id="clientProject"></select></label></div>
+          <button id="inviteBtn" type="submit">เพิ่มลูกค้าและส่งอีเมลตั้งรหัสผ่าน</button>
+        </form>
+        <p id="adminMessage" class="muted" role="status"></p>
+      </div>
+
+      <div class="card admin-card">
+        <div class="row"><div><strong>ผู้มีสิทธิ์ใน Project ที่เลือก</strong><div class="muted" id="accessProjectLabel"></div></div><button id="copyClientLink" class="secondary" type="button">คัดลอกลิงก์สำหรับลูกค้า</button></div>
+        <div class="table-wrap"><table><thead><tr><th>ลูกค้า</th><th>อีเมล</th><th>สิทธิ์</th><th>Projects</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="memberRows"></tbody></table></div>
+      </div>
+    </section>
+  </section>
+</main>
+<script src="./firebase-config.js?v=20261017-exact"></script>
+<script type="module" src="./app-v4.js?v=20261017-1"></script>
+</body>
+</html>
