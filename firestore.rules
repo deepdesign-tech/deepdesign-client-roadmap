@@ -1,22 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
+    function signedIn() {
+      return request.auth != null;
+    }
+
     function member() {
       return get(/databases/$(database)/documents/members/$(request.auth.uid));
     }
+
     function hasMember() {
-      return signedIn() && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+      return signedIn()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid));
     }
+
+    function activeMember() {
+      return hasMember()
+        && (!member().data.keys().hasAny(['active']) || member().data.active == true);
+    }
+
+    function isAdmin() {
+      return activeMember() && member().data.role == 'admin';
+    }
+
     function allowed(projectId) {
-      return hasMember() && projectId in member().data.projects;
+      return activeMember()
+        && member().data.projects is list
+        && projectId in member().data.projects;
     }
+
     function editor(projectId) {
       return allowed(projectId) && member().data.role in ['admin', 'editor'];
     }
+
     function admin(projectId) {
       return allowed(projectId) && member().data.role == 'admin';
     }
+
     function validProjectShape() {
       return request.resource.data.keys().hasAll(['name', 'phases', 'kpi', 'notes'])
         && request.resource.data.name is string
@@ -28,9 +48,43 @@ service cloud.firestore {
         && request.resource.data.notes.size() <= 10000;
     }
 
+    function validManagedMember() {
+      return request.resource.data.keys().hasAll(['email', 'role', 'projects', 'active'])
+        && request.resource.data.keys().hasOnly([
+          'email', 'displayName', 'role', 'projects', 'active',
+          'createdAt', 'createdBy', 'updatedAt'
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.role in ['viewer', 'editor']
+        && request.resource.data.projects is list
+        && request.resource.data.projects.size() <= 50
+        && request.resource.data.active is bool
+        && (!request.resource.data.keys().hasAny(['displayName']) || request.resource.data.displayName is string);
+    }
+
     match /members/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid;
-      allow list, create, update, delete: if false;
+      // Users can read only themselves; DeepDesign admins can read/list managed users.
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      // Admin UI may create Viewer/Editor accounts, but can never create another Admin.
+      allow create: if isAdmin()
+        && uid != request.auth.uid
+        && validManagedMember()
+        && request.resource.data.projects.size() > 0;
+
+      // Admin UI may manage Viewer/Editor access only. Admin records are protected.
+      allow update: if isAdmin()
+        && uid != request.auth.uid
+        && resource.data.role != 'admin'
+        && validManagedMember()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'role', 'projects', 'active', 'updatedAt'
+        ]);
+
+      allow delete: if false;
     }
 
     match /projects/{projectId} {
@@ -38,7 +92,9 @@ service cloud.firestore {
       allow list, delete: if false;
       allow create: if admin(projectId) && validProjectShape();
       allow update: if editor(projectId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['phases', 'kpi', 'notes', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'phases', 'kpi', 'notes', 'updatedAt'
+        ])
         && validProjectShape();
     }
 
