@@ -19,33 +19,36 @@ service cloud.firestore {
         && (!member().data.keys().hasAny(['active']) || member().data.active == true);
     }
 
+    // DeepDesign admin is global across Roadmap projects.
     function isAdmin() {
       return activeMember() && member().data.role == 'admin';
     }
 
-    function allowed(projectId) {
+    function assigned(projectId) {
       return activeMember()
         && member().data.projects is list
         && projectId in member().data.projects;
     }
 
     function editor(projectId) {
-      return allowed(projectId) && member().data.role in ['admin', 'editor'];
-    }
-
-    function admin(projectId) {
-      return allowed(projectId) && member().data.role == 'admin';
+      return assigned(projectId) && member().data.role == 'editor';
     }
 
     function validProjectShape() {
       return request.resource.data.keys().hasAll(['name', 'phases', 'kpi', 'notes'])
+        && request.resource.data.keys().hasOnly([
+          'name', 'phases', 'kpi', 'notes', 'status',
+          'createdAt', 'createdBy', 'updatedAt'
+        ])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 200
         && request.resource.data.phases is map
         && request.resource.data.kpi is map
         && request.resource.data.notes is string
-        && request.resource.data.notes.size() <= 10000;
+        && request.resource.data.notes.size() <= 10000
+        && (!request.resource.data.keys().hasAny(['status'])
+          || request.resource.data.status in ['active', 'paused', 'archived']);
     }
 
     function validManagedMember() {
@@ -59,23 +62,24 @@ service cloud.firestore {
         && request.resource.data.email.size() <= 254
         && request.resource.data.role in ['viewer', 'editor']
         && request.resource.data.projects is list
-        && request.resource.data.projects.size() <= 50
+        && request.resource.data.projects.size() <= 100
         && request.resource.data.active is bool
-        && (!request.resource.data.keys().hasAny(['displayName']) || request.resource.data.displayName is string);
+        && (!request.resource.data.keys().hasAny(['displayName'])
+          || request.resource.data.displayName is string);
     }
 
     match /members/{uid} {
-      // Users can read only themselves; DeepDesign admins can read/list managed users.
+      // Users may read their own access record. Admin can query all managed clients.
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow list: if isAdmin();
 
-      // Admin UI may create Viewer/Editor accounts, but can never create another Admin.
+      // Admin UI can create only Viewer/Editor records, never another Admin.
       allow create: if isAdmin()
         && uid != request.auth.uid
         && validManagedMember()
         && request.resource.data.projects.size() > 0;
 
-      // Admin UI may manage Viewer/Editor access only. Admin records are protected.
+      // Admin UI can change Viewer/Editor access and project assignments.
       allow update: if isAdmin()
         && uid != request.auth.uid
         && resource.data.role != 'admin'
@@ -88,14 +92,22 @@ service cloud.firestore {
     }
 
     match /projects/{projectId} {
-      allow get: if allowed(projectId);
-      allow list, delete: if false;
-      allow create: if admin(projectId) && validProjectShape();
-      allow update: if editor(projectId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'phases', 'kpi', 'notes', 'updatedAt'
-        ])
-        && validProjectShape();
+      // Admin sees every project; clients only projects assigned in their member record.
+      allow get: if isAdmin() || assigned(projectId);
+      allow list: if isAdmin();
+
+      // Global DeepDesign admins can create projects directly from the web app.
+      allow create: if isAdmin() && validProjectShape();
+
+      // Admin can manage project settings/content. Editors can change Roadmap content only.
+      allow update: if (isAdmin() && validProjectShape())
+        || (editor(projectId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'phases', 'kpi', 'notes', 'updatedAt'
+          ])
+          && validProjectShape());
+
+      allow delete: if false;
     }
 
     match /{document=**} {
