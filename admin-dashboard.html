@@ -64,12 +64,16 @@
         <div class="card" style="margin-top:14px"><h3>Project ทั้งหมด</h3><div id="projectTiles" class="project-list" style="margin-top:12px"></div></div>
         <div class="card" style="margin-top:14px">
           <h3>ตั้งค่า Project ที่เลือก</h3>
-          <div class="grid3"><label>ชื่อ Project<input id="editProjectName" maxlength="120"></label><label>สถานะ<select id="editProjectStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="archived">Archived</option></select></label><label>Project ID<input id="editProjectId" readonly></label></div>
-          <button id="saveProjectSettings" type="button">บันทึกการตั้งค่า</button>
+          <div class="grid3"><label>ชื่อ Project<input id="editProjectName" maxlength="120"></label><label>สถานะ<select id="editProjectStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed / ปิดงานแล้ว</option><option value="archived">Archived</option></select></label><label>Project ID<input id="editProjectId" readonly></label></div>
+          <div class="builder-actions">
+            <button id="saveProjectSettings" type="button">บันทึกการตั้งค่า</button>
+            <button id="closeProject" class="secondary" type="button">ปิด Project / งานเสร็จแล้ว</button>
+          </div>
+          <p id="projectLifecycleMessage" class="muted"></p>
           <div class="divider"></div>
           <div class="notice" style="border-color:#f1caca;background:#fff8f8">
             <strong style="color:#a62237">Danger Zone · ลบ Project ถาวร</strong>
-            <p class="muted">เพื่อป้องกันการลบผิด ระบบจะอนุญาตให้ลบถาวรเฉพาะ Project ที่เป็น Archived เท่านั้น การลบจะถอน Project นี้ออกจากสิทธิ์ของลูกค้าทุกคนโดยอัตโนมัติ แต่จะไม่ลบบัญชีลูกค้า</p>
+            <p class="muted">ใช้ “ปิด Project” สำหรับงานที่เสร็จแล้วและต้องการเก็บประวัติไว้ การลบถาวรเหมาะเฉพาะ Project ทดสอบ/สร้างผิด/ข้อมูลซ้ำ และทำได้เมื่อสถานะเป็น Completed หรือ Archived เท่านั้น การลบจะถอน Project นี้ออกจากสิทธิ์ของลูกค้าทุกคน แต่ไม่ลบบัญชีลูกค้า</p>
             <button id="deleteProject" class="danger" type="button">ลบ Project นี้ถาวร</button>
           </div>
         </div>
