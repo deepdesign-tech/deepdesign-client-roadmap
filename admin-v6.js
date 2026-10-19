@@ -24,7 +24,7 @@ function slugify(s){const b=String(s||'').trim().toLowerCase().normalize('NFKD')
 function cleanProjectId(s){return String(s||'').trim().toLowerCase().replace(/[^a-z0-9ก-๙_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);}
 function projectDefs(){return Array.isArray(data.phaseDefinitions)?data.phaseDefinitions:legacyTemplate;}
 function phaseProgress(def,index){const p=data.phases||{};return p[def.id]||p[String(index)]||{status:'todo',tasks:{}};}
-function statusText(s){return ({active:'Active',paused:'Paused',archived:'Archived'})[s]||'Active';}
+function statusText(s){return ({active:'Active',paused:'Paused',completed:'Completed',archived:'Archived'})[s]||'Active';}
 function projectNotify(t,e=false){$('projectMessage').textContent=t;$('projectMessage').className=e?'error':'ok';}
 function builderNotify(t,e=false){$('builderMessage').textContent=t;$('builderMessage').className=e?'error':'ok';}
 function adminNotify(t,e=false){$('adminMessage').textContent=t;$('adminMessage').className=e?'error':'ok';}
@@ -66,6 +66,11 @@ function fillProjectSettings(){
   $('editProjectId').value=projectId;$('editProjectName').value=data.name||'';$('editProjectStatus').value=data.status||'active';
   $('topProjectName').textContent=data.name||projectId;$('topProjectMeta').textContent=projectId+' · '+statusText(data.status||'active');
   $('accessProjectLabel').textContent=(data.name||projectId)+' · '+projectId;$('notes').value=data.notes||'';
+  const closed=(data.status==='completed'||data.status==='archived');
+  $('closeProject').textContent=closed?'เปิด Project อีกครั้ง':'ปิด Project / งานเสร็จแล้ว';
+  $('projectLifecycleMessage').textContent=data.status==='completed'
+    ? 'Project นี้ปิดงานแล้วและถูกเก็บไว้เป็นประวัติ ลูกค้ายังเปิดดูข้อมูลได้ แต่ Editor จะแก้ไขความคืบหน้าไม่ได้'
+    : (data.status==='archived'?'Project นี้ถูก Archive และเก็บข้อมูลไว้':'');
 }
 async function writeProject(patch){if(!projectId)return;try{await updateDoc(doc(db,'projects',projectId),{...patch,updatedAt:serverTimestamp()});notify('บันทึกสำเร็จ');}catch(e){notify('บันทึกไม่สำเร็จ: '+e.message,true);}}
 
@@ -73,8 +78,8 @@ async function deleteProjectPermanently(){
   if(!projectId)return;
   const targetId=projectId;
   const targetName=data.name||targetId;
-  if((data.status||'active')!=='archived'){
-    projectNotify('เพื่อความปลอดภัย กรุณาเปลี่ยนสถานะ Project เป็น Archived และบันทึกก่อนลบถาวร',true);
+  if(!['completed','archived'].includes(data.status||'active')){
+    projectNotify('เพื่อความปลอดภัย กรุณาปิด Project ให้เป็น Completed หรือ Archived ก่อนลบถาวร',true);
     switchView('projects');
     return;
   }
@@ -138,7 +143,7 @@ function renderProjectTiles(){
   document.querySelectorAll('[data-open-project]').forEach(b=>b.addEventListener('click',()=>{subscribeProject(b.dataset.openProject);switchView('overview');}));
 }
 function renderProjectSelectors(){
-  const opts=projectCatalog.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name||p.id)+(p.status==='archived'?' [Archived]':'')+'</option>').join('');
+  const opts=projectCatalog.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name||p.id)+(p.status==='completed'?' [Completed]':(p.status==='archived'?' [Archived]':''))+'</option>').join('');
   $('project').innerHTML=opts;$('clientProject').innerHTML=opts;
   const available=new Set(projectCatalog.map(p=>p.id));let target=pendingProjectSelect&&available.has(pendingProjectSelect)?pendingProjectSelect:(projectId&&available.has(projectId)?projectId:null);
   if(!target&&requestedProject&&available.has(requestedProject))target=requestedProject;if(!target)target=projectCatalog[0]?.id||null;pendingProjectSelect=null;renderProjectTiles();
@@ -185,6 +190,20 @@ if(!cfg?.apiKey||!cfg?.projectId){show('setup',true);}else{
   $('newProjectId').addEventListener('input',()=>{projectIdManuallyEdited=true;$('newProjectId').value=cleanProjectId($('newProjectId').value);});
   $('projectCreateForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('newProjectName').value.trim(),id=cleanProjectId($('newProjectId').value),mode=$('newProjectTemplate').value;if(!name||!id)return projectNotify('กรุณากรอกชื่อและ Project ID',true);try{if((await getDoc(doc(db,'projects',id))).exists())throw new Error('Project ID นี้มีอยู่แล้ว');let defs=[];if(mode==='marketing')defs=deepCopy(legacyTemplate);if(mode==='current')defs=deepCopy(projectDefs());await setDoc(doc(db,'projects',id),{name,status:'active',phaseDefinitions:defs,phaseSchemaVersion:2,phases:{},kpi:{},notes:'',createdAt:serverTimestamp(),createdBy:currentUser.uid,updatedAt:serverTimestamp()});pendingProjectSelect=id;projectNotify('สร้าง Project สำเร็จ');$('projectCreateForm').reset();$('newProjectTemplate').value='blank';projectIdManuallyEdited=false;}catch(err){projectNotify('สร้าง Project ไม่สำเร็จ: '+err.message,true);}});
   $('saveProjectSettings').onclick=async()=>{if(!projectId)return;try{await updateDoc(doc(db,'projects',projectId),{name:$('editProjectName').value.trim()||data.name,status:$('editProjectStatus').value,updatedAt:serverTimestamp()});projectNotify('บันทึก Project settings แล้ว');}catch(e){projectNotify('บันทึกไม่สำเร็จ: '+e.message,true);}};
+  $('closeProject').onclick=async()=>{
+    if(!projectId)return;
+    const closed=(data.status==='completed'||data.status==='archived');
+    try{
+      if(closed){
+        await updateDoc(doc(db,'projects',projectId),{status:'active',reopenedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        projectNotify('เปิด Project อีกครั้งแล้ว');
+      }else{
+        if(!confirm('ยืนยันปิด Project “'+(data.name||projectId)+'” ว่างานเสร็จแล้ว?\nข้อมูลทั้งหมดจะยังถูกเก็บไว้และเปิดดูย้อนหลังได้'))return;
+        await updateDoc(doc(db,'projects',projectId),{status:'completed',closedAt:serverTimestamp(),closedBy:currentUser.uid,updatedAt:serverTimestamp()});
+        projectNotify('ปิด Project แล้ว ข้อมูลยังถูกเก็บไว้เป็นประวัติ');
+      }
+    }catch(e){projectNotify('เปลี่ยนสถานะ Project ไม่สำเร็จ: '+e.message,true);}
+  };
   $('deleteProject').onclick=()=>deleteProjectPermanently();
   $('addPhase').onclick=()=>{builderPhases.push({id:uid('phase'),title:'',label:'',detail:'',tasks:[]});renderBuilder();};
   $('resetBuilder').onclick=()=>resetBuilder();
