@@ -2,112 +2,246 @@
 <html lang="th">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DeepDesign Admin Console</title>
-<link rel="stylesheet" href="./portal-v6.css?v=20261019-1">
+<title>DeepDesign Roadmap Admin</title>
+<link rel="stylesheet" href="./portal-v7.css?v=20261019-1">
 </head>
 <body>
 <section id="setup" class="card login-card hidden"><h2>Firebase ยังไม่พร้อม</h2><p>กรุณาตรวจสอบ firebase-config.js</p></section>
 <section id="login" class="card login-card hidden">
-  <div class="brand-sub">DEEPDESIGN · ADMIN</div><h2>เข้าสู่ระบบหลังบ้าน</h2>
-  <form id="loginForm"><label>อีเมล<input id="email" type="email" required autocomplete="username"></label><label>รหัสผ่าน<input id="password" type="password" required autocomplete="current-password"></label><button type="submit">เข้าสู่ระบบ</button></form>
+  <div class="brand-sub">DEEPDESIGN · ADMIN CONSOLE</div>
+  <h2>เข้าสู่ระบบหลังบ้าน</h2>
+  <form id="loginForm">
+    <label>อีเมล<input id="email" type="email" required autocomplete="username"></label>
+    <label>รหัสผ่าน<input id="password" type="password" required autocomplete="current-password"></label>
+    <button type="submit" style="width:100%;margin-top:6px">เข้าสู่ระบบ</button>
+  </form>
   <p id="loginError" class="error"></p>
 </section>
 
 <div id="adminApp" class="admin-shell hidden">
   <aside class="sidebar">
-    <div class="brand-sub">DEEPDESIGN</div><h1>Roadmap Admin</h1>
+    <div class="sidebar-brand">
+      <div class="brand-sub">DEEPDESIGN</div>
+      <h1>Roadmap Admin</h1>
+    </div>
+
+    <div class="nav-section">Workspace</div>
     <nav class="nav">
-      <button data-view="overview" class="active">ภาพรวม</button>
+      <button data-view="dashboard" class="active">ภาพรวม</button>
       <button data-view="projects">Projects</button>
-      <button data-view="builder">Phase Builder</button>
-      <button data-view="progress">ความคืบหน้า</button>
       <button data-view="clients">Clients & Access</button>
-      <button data-view="notes">Notes</button>
     </nav>
-    <div class="sidebar-footer"><div id="adminIdentity" class="muted" style="color:#b9cade;margin-bottom:10px"></div><button id="logout" class="secondary" style="width:100%">ออกจากระบบ</button></div>
+
+    <div class="sidebar-footer">
+      <div id="adminIdentity" class="sidebar-user"></div>
+      <button id="logout" class="secondary" style="width:100%">ออกจากระบบ</button>
+    </div>
   </aside>
+
   <main class="admin-main">
     <header class="topbar">
-      <div><strong id="topProjectName">เลือก Project</strong><div id="topProjectMeta" class="muted"></div></div>
-      <div class="row">
+      <div class="topbar-title">
+        <strong id="topProjectName">DeepDesign Roadmap</strong>
+        <div id="topProjectMeta" class="muted">Admin Console</div>
+      </div>
+      <div class="topbar-actions">
         <select id="project" class="project-switch" aria-label="เลือก Project"></select>
         <button id="openClientPreview" class="secondary" type="button">ดูหน้าลูกค้า</button>
       </div>
     </header>
+
     <div class="content">
-      <section id="view-overview" class="view active">
-        <div class="section-head"><div><h2>ภาพรวมระบบ</h2><p class="muted">ดูสถานะ Project และความคืบหน้าของ Project ที่เลือก</p></div></div>
+      <section id="view-dashboard" class="view active">
+        <div class="section-head">
+          <div><h2>ภาพรวม</h2><p class="muted">ดูสถานะงานทั้งหมดและเข้าถึง Project ที่ต้องจัดการได้เร็วขึ้น</p></div>
+          <button id="quickCreateProject" type="button">+ สร้าง Project</button>
+        </div>
+
         <div class="metrics">
           <div class="card"><div class="muted">Projects ทั้งหมด</div><div id="allProjectsMetric" class="metric">0</div></div>
-          <div class="card"><div class="muted">Active Projects</div><div id="activeProjectsMetric" class="metric">0</div></div>
-          <div class="card"><div class="muted">Phase เสร็จ</div><div id="doneMetric" class="metric">0/0</div></div>
-          <div class="card"><div class="muted">Checklist</div><div id="taskMetric" class="metric">0/0</div></div>
+          <div class="card"><div class="muted">กำลังทำงาน</div><div id="activeProjectsMetric" class="metric">0</div></div>
+          <div class="card"><div class="muted">ปิดงานแล้ว</div><div id="completedProjectsMetric" class="metric">0</div></div>
+          <div class="card"><div class="muted">Archived</div><div id="archivedProjectsMetric" class="metric">0</div></div>
         </div>
-        <div class="card" style="margin-top:14px"><div class="row"><strong>ความคืบหน้า Project ที่เลือก</strong><strong id="percent">0%</strong></div><div class="bar" style="margin:12px 0"><div id="fill" class="fill"></div></div><div id="sync" class="muted">กำลังเชื่อมต่อ...</div></div>
-        <div class="grid2" style="margin-top:14px"><div class="card"><strong>Project</strong><p id="overviewProjectName"></p><div id="overviewProjectStatus" class="status-pill"></div></div><div class="card"><strong>จำนวน Phase</strong><div id="phaseCount" class="metric">0</div><p class="muted">โครงสร้าง Roadmap ปัจจุบัน</p></div></div>
+
+        <div class="summary-grid" style="margin-top:16px">
+          <div class="card">
+            <div class="row"><div><h3>Project ที่เลือก</h3><p class="muted" style="margin:4px 0 0">สรุปความคืบหน้าล่าสุด</p></div><button id="manageSelectedProject" class="secondary" type="button">จัดการ Project</button></div>
+            <div class="divider"></div>
+            <div class="summary-list">
+              <div class="summary-row"><span>ชื่อ Project</span><strong id="overviewProjectName">-</strong></div>
+              <div class="summary-row"><span>สถานะ</span><span id="overviewProjectStatus" class="status-pill">-</span></div>
+              <div class="summary-row"><span>Phase เสร็จ</span><strong id="doneMetric">0/0</strong></div>
+              <div class="summary-row"><span>Checklist</span><strong id="taskMetric">0/0</strong></div>
+            </div>
+            <div class="divider"></div>
+            <div class="row"><span class="muted">ความคืบหน้า</span><strong id="percent">0%</strong></div>
+            <div class="bar" style="margin:10px 0"><div id="fill" class="fill"></div></div>
+            <div id="sync" class="muted">กำลังเชื่อมต่อ...</div>
+          </div>
+
+          <div class="card">
+            <h3>Project ล่าสุด</h3>
+            <p class="muted" style="margin:4px 0 14px">เลือก Project เพื่อเข้าไปจัดการ Roadmap</p>
+            <div id="dashboardProjectList" class="stack"></div>
+          </div>
+        </div>
       </section>
 
       <section id="view-projects" class="view">
-        <div class="section-head"><div><h2>Projects</h2><p class="muted">สร้าง Project ใหม่ และตั้งค่าชื่อ/สถานะของ Project</p></div></div>
-        <div class="card">
-          <h3>สร้าง Project ใหม่</h3>
-          <form id="projectCreateForm">
-            <div class="grid3">
-              <label>ชื่อ Project / ลูกค้า<input id="newProjectName" required maxlength="120" placeholder="ABC Clinic — Q4 Launch"></label>
-              <label>Project ID<input id="newProjectId" required maxlength="80" placeholder="abc-clinic-q4"></label>
-              <label>เริ่มจาก<select id="newProjectTemplate"><option value="blank">Project ว่าง</option><option value="marketing">Marketing Template 4 Phase</option><option value="current">คัดลอก Phase จาก Project ปัจจุบัน</option></select></label>
+        <div class="section-head">
+          <div><h2>Projects</h2><p class="muted">สร้าง ค้นหา และจัดการวงจรชีวิตของ Project</p></div>
+          <button id="createProjectBtn" type="button">+ สร้าง Project</button>
+        </div>
+
+        <div class="toolbar" style="margin-bottom:14px">
+          <button class="filter-btn active" data-project-filter="all">ทั้งหมด</button>
+          <button class="filter-btn" data-project-filter="active">Active</button>
+          <button class="filter-btn" data-project-filter="paused">Paused</button>
+          <button class="filter-btn" data-project-filter="completed">Completed</button>
+          <button class="filter-btn" data-project-filter="archived">Archived</button>
+        </div>
+
+        <div id="projectGrid" class="project-grid"></div>
+      </section>
+
+      <section id="view-project" class="view">
+        <div class="workspace-head">
+          <div class="workspace-title">
+            <div class="breadcrumb"><button id="backToProjects" class="ghost compact" type="button">← Projects</button></div>
+            <div class="row" style="justify-content:flex-start">
+              <h2 id="workspaceProjectName">Project</h2>
+              <span id="workspaceProjectStatus" class="status-pill"></span>
             </div>
-            <button type="submit">สร้าง Project</button>
-          </form>
+            <div id="workspaceProjectId" class="muted" style="margin-top:5px"></div>
+          </div>
+          <div class="workspace-actions">
+            <button id="workspaceClientPreview" class="secondary" type="button">ดูหน้าลูกค้า</button>
+            <button id="workspaceCloseProject" class="secondary" type="button">ปิด Project</button>
+          </div>
+        </div>
+
+        <nav class="project-tabs">
+          <button data-project-tab="overview" class="active">ภาพรวม</button>
+          <button data-project-tab="roadmap">Roadmap Builder</button>
+          <button data-project-tab="progress">ความคืบหน้า</button>
+          <button data-project-tab="notes">Notes</button>
+          <button data-project-tab="access">สิทธิ์ลูกค้า</button>
+          <button data-project-tab="settings">ตั้งค่า</button>
+        </nav>
+
+        <section id="project-tab-overview" class="project-subview active">
+          <div class="metrics">
+            <div class="card"><div class="muted">จำนวน Phase</div><div id="phaseCount" class="metric">0</div></div>
+            <div class="card"><div class="muted">Phase เสร็จ</div><div id="workspaceDoneMetric" class="metric">0/0</div></div>
+            <div class="card"><div class="muted">Checklist</div><div id="workspaceTaskMetric" class="metric">0/0</div></div>
+            <div class="card"><div class="muted">สถานะ</div><div id="workspaceStatusMetric" style="margin-top:10px"><span class="status-pill">-</span></div></div>
+          </div>
+          <div class="card lifecycle-card" style="margin-top:14px">
+            <h3>Project Lifecycle</h3>
+            <p id="projectLifecycleSummary" class="muted"></p>
+          </div>
+        </section>
+
+        <section id="project-tab-roadmap" class="project-subview">
+          <div class="section-head">
+            <div><h3>Dynamic Phase Builder</h3><p class="muted">เพิ่ม ลบ เรียงลำดับ และกำหนด Checklist ของแต่ละ Phase</p></div>
+            <div class="builder-actions">
+              <button id="addPhase" type="button">+ เพิ่ม Phase</button>
+              <button id="resetBuilder" class="secondary" type="button">ยกเลิกการแก้ไข</button>
+              <button id="saveBuilder" type="button">บันทึก Roadmap</button>
+            </div>
+          </div>
+          <div class="card"><div id="phaseBuilder"></div><p id="builderMessage" class="muted"></p></div>
+        </section>
+
+        <section id="project-tab-progress" class="project-subview">
+          <div class="section-head"><div><h3>ความคืบหน้า</h3><p class="muted">อัปเดต Checklist และสถานะของแต่ละ Phase</p></div></div>
+          <div id="phases" class="roadmap-grid"></div><p id="message"></p>
+        </section>
+
+        <section id="project-tab-notes" class="project-subview">
+          <div class="card">
+            <h3>Meeting Notes</h3>
+            <p class="muted">บันทึกข้อมูลที่ต้องการให้แสดงใน Project</p>
+            <textarea id="notes" rows="12" placeholder="ประเด็นประชุมและสิ่งที่ต้องติดตาม"></textarea>
+            <p><button id="saveNotes">บันทึก Notes</button></p>
+          </div>
+        </section>
+
+        <section id="project-tab-access" class="project-subview">
+          <div class="card">
+            <div class="row"><div><h3>Clients & Access</h3><div id="accessProjectLabel" class="muted"></div></div><button id="copyClientLink" class="secondary" type="button">คัดลอกลิงก์ลูกค้า</button></div>
+            <div class="divider"></div>
+            <form id="inviteForm">
+              <div class="grid2">
+                <label>ชื่อลูกค้า / ธุรกิจ<input id="clientName" maxlength="120" placeholder="ABC Clinic"></label>
+                <label>อีเมลลูกค้า<input id="clientEmail" type="email" required placeholder="client@example.com"></label>
+              </div>
+              <div class="grid2">
+                <label>สิทธิ์<select id="clientRole"><option value="viewer">Viewer — ดูอย่างเดียว</option><option value="editor">Editor — อัปเดตความคืบหน้าได้</option></select></label>
+                <label>Project<select id="clientProject"></select></label>
+              </div>
+              <button id="inviteBtn" type="submit">เพิ่มลูกค้า / เพิ่มสิทธิ์</button>
+            </form>
+            <p id="adminMessage" class="muted"></p>
+            <div class="divider"></div>
+            <div class="table-wrap">
+              <table><thead><tr><th>ลูกค้า</th><th>อีเมล</th><th>สิทธิ์</th><th>Projects</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="memberRows"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <section id="project-tab-settings" class="project-subview">
+          <div class="grid2">
+            <div class="card">
+              <h3>ตั้งค่า Project</h3>
+              <label>ชื่อ Project<input id="editProjectName" maxlength="120"></label>
+              <label>สถานะ<select id="editProjectStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed / ปิดงานแล้ว</option><option value="archived">Archived</option></select></label>
+              <label>Project ID<input id="editProjectId" readonly></label>
+              <div class="builder-actions"><button id="saveProjectSettings" type="button">บันทึกการตั้งค่า</button><button id="closeProject" class="secondary" type="button">ปิด Project / งานเสร็จแล้ว</button></div>
+              <p id="projectLifecycleMessage" class="muted"></p>
+            </div>
+            <div class="card" style="border-color:#f1caca">
+              <h3 style="color:#a62237">Danger Zone</h3>
+              <p class="muted">ลบถาวรเฉพาะ Project ทดสอบ / สร้างผิด / ข้อมูลซ้ำ เท่านั้น หากงานเสร็จให้ใช้ “ปิด Project” เพื่อเก็บประวัติไว้</p>
+              <button id="deleteProject" class="danger" type="button">ลบ Project ถาวร</button>
+            </div>
+          </div>
           <p id="projectMessage" class="muted"></p>
-        </div>
-        <div class="card" style="margin-top:14px"><h3>Project ทั้งหมด</h3><div id="projectTiles" class="project-list" style="margin-top:12px"></div></div>
-        <div class="card" style="margin-top:14px">
-          <h3>ตั้งค่า Project ที่เลือก</h3>
-          <div class="grid3"><label>ชื่อ Project<input id="editProjectName" maxlength="120"></label><label>สถานะ<select id="editProjectStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed / ปิดงานแล้ว</option><option value="archived">Archived</option></select></label><label>Project ID<input id="editProjectId" readonly></label></div>
-          <div class="builder-actions">
-            <button id="saveProjectSettings" type="button">บันทึกการตั้งค่า</button>
-            <button id="closeProject" class="secondary" type="button">ปิด Project / งานเสร็จแล้ว</button>
-          </div>
-          <p id="projectLifecycleMessage" class="muted"></p>
-          <div class="divider"></div>
-          <div class="notice" style="border-color:#f1caca;background:#fff8f8">
-            <strong style="color:#a62237">Danger Zone · ลบ Project ถาวร</strong>
-            <p class="muted">ใช้ “ปิด Project” สำหรับงานที่เสร็จแล้วและต้องการเก็บประวัติไว้ การลบถาวรเหมาะเฉพาะ Project ทดสอบ/สร้างผิด/ข้อมูลซ้ำ และทำได้เมื่อสถานะเป็น Completed หรือ Archived เท่านั้น การลบจะถอน Project นี้ออกจากสิทธิ์ของลูกค้าทุกคน แต่ไม่ลบบัญชีลูกค้า</p>
-            <button id="deleteProject" class="danger" type="button">ลบ Project นี้ถาวร</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-builder" class="view">
-        <div class="section-head"><div><h2>Dynamic Phase Builder</h2><p class="muted">ออกแบบ Phase, Label, รายละเอียด และ Checklist ของ Project ที่เลือก</p></div><div class="builder-actions"><button id="addPhase" type="button">+ เพิ่ม Phase</button><button id="resetBuilder" class="secondary" type="button">ยกเลิกการแก้ไข</button><button id="saveBuilder" type="button">บันทึก Roadmap</button></div></div>
-        <div class="card"><div id="phaseBuilder"></div><p id="builderMessage" class="muted"></p></div>
-      </section>
-
-      <section id="view-progress" class="view">
-        <div class="section-head"><div><h2>ความคืบหน้า</h2><p class="muted">อัปเดต Checklist และสถานะของแต่ละ Phase</p></div></div>
-        <div id="phases" class="roadmap-grid"></div><p id="message"></p>
+        </section>
       </section>
 
       <section id="view-clients" class="view">
-        <div class="section-head"><div><h2>Clients & Access</h2><p class="muted">เพิ่มลูกค้า กำหนดสิทธิ์ และเลือก Project ที่ลูกค้าเข้าถึง</p></div></div>
+        <div class="section-head"><div><h2>Clients & Access</h2><p class="muted">เลือก Project แล้วจัดการสิทธิ์ลูกค้าในที่เดียว</p></div></div>
         <div class="card">
-          <form id="inviteForm">
-            <div class="grid2"><label>ชื่อลูกค้า / ธุรกิจ<input id="clientName" maxlength="120" placeholder="ABC Clinic"></label><label>อีเมลลูกค้า<input id="clientEmail" type="email" required placeholder="client@example.com"></label></div>
-            <div class="grid2"><label>สิทธิ์<select id="clientRole"><option value="viewer">Viewer — ดูอย่างเดียว</option><option value="editor">Editor — อัปเดตความคืบหน้าได้</option></select></label><label>ให้เข้า Project<select id="clientProject"></select></label></div>
-            <button id="inviteBtn" type="submit">เพิ่มลูกค้า / เพิ่มสิทธิ์ Project</button>
-          </form><p id="adminMessage" class="muted"></p>
+          <div class="grid2">
+            <label>เลือก Project<select id="clientProjectPage"></select></label>
+            <div class="notice"><strong>แนะนำ</strong><div class="muted">จัดการสิทธิ์ราย Project เพื่อไม่ให้ลูกค้าเห็นงานที่ไม่เกี่ยวข้อง</div></div>
+          </div>
+          <div class="divider"></div>
+          <button id="openAccessWorkspace" type="button">เปิดการจัดการสิทธิ์ของ Project นี้</button>
         </div>
-        <div class="card" style="margin-top:14px"><div class="row"><div><strong>ผู้มีสิทธิ์ใน Project ที่เลือก</strong><div id="accessProjectLabel" class="muted"></div></div><button id="copyClientLink" class="secondary" type="button">คัดลอกลิงก์หน้าลูกค้า</button></div><div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>ลูกค้า</th><th>อีเมล</th><th>สิทธิ์</th><th>Projects</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="memberRows"></tbody></table></div></div>
-      </section>
-
-      <section id="view-notes" class="view">
-        <div class="section-head"><div><h2>Meeting Notes</h2><p class="muted">บันทึกข้อมูลที่ต้องการให้แสดงใน Project</p></div></div>
-        <div class="card"><textarea id="notes" rows="12" placeholder="ประเด็นประชุมและสิ่งที่ต้องติดตาม"></textarea><p><button id="saveNotes">บันทึก Notes</button></p></div>
       </section>
     </div>
   </main>
 </div>
+
+<dialog id="createProjectDialog">
+  <form id="projectCreateForm" method="dialog">
+    <div class="modal-head"><div><h3>สร้าง Project ใหม่</h3><div class="muted">สร้าง Project แล้วค่อยออกแบบ Roadmap ภายหลังได้</div></div><button id="closeCreateDialog" class="icon-btn" type="button">×</button></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <label>ชื่อ Project / ลูกค้า<input id="newProjectName" required maxlength="120" placeholder="ABC Clinic — Q4 Launch"></label>
+        <label>Project ID<input id="newProjectId" required maxlength="80" placeholder="abc-clinic-q4"></label>
+      </div>
+      <label>เริ่มจาก<select id="newProjectTemplate"><option value="blank">Project ว่าง</option><option value="marketing">Marketing Template 4 Phase</option><option value="current">คัดลอก Phase จาก Project ปัจจุบัน</option></select></label>
+      <p class="muted">Project ID ใช้เป็นรหัสอ้างอิงภายในระบบ แนะนำให้สั้นและอ่านง่าย</p>
+    </div>
+    <div class="modal-foot"><button id="cancelCreateDialog" class="secondary" type="button">ยกเลิก</button><button type="submit">สร้าง Project</button></div>
+  </form>
+</dialog>
+
 <script src="./firebase-config.js?v=20261017-exact"></script>
-<script type="module" src="./admin-v6.js?v=20261019-1"></script>
+<script type="module" src="./admin-v7.js?v=20261019-1"></script>
 </body></html>
