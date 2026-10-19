@@ -19,10 +19,10 @@ let auth,db,currentUser,role,memberData={},projectId=null,data={},projectCatalog
 let projectUnsub,selfMemberUnsub;
 
 function deepCopy(v){return JSON.parse(JSON.stringify(v));}
-function writable(){return role==='editor';}
+function writable(){return role==='editor' && (data.status||'active')==='active';}
 function projectDefs(){return Array.isArray(data.phaseDefinitions)?data.phaseDefinitions:legacyTemplate;}
 function phaseProgress(def,index){const p=data.phases||{};return p[def.id]||p[String(index)]||{status:'todo',tasks:{}};}
-function statusText(s){return ({active:'Active',paused:'Paused',archived:'Archived'})[s]||'Active';}
+function statusText(s){return ({active:'Active',paused:'Paused',completed:'Completed',archived:'Archived'})[s]||'Active';}
 function notify(t,e=false){$('message').textContent=t;$('message').className=e?'error':'ok';}
 function switchView(name){document.querySelectorAll('.client-view').forEach(v=>v.classList.toggle('active',v.id==='client-view-'+name));document.querySelectorAll('[data-client-view]').forEach(b=>b.classList.toggle('active',b.dataset.clientView===name));}
 document.querySelectorAll('[data-client-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.clientView)));
@@ -42,7 +42,9 @@ function renderRoadmap(){
     const pr=phaseProgress(d,i),st=pr.status||'todo',tasks=Array.isArray(d.tasks)?d.tasks:[];
     return '<article class="card phase-card"><div class="row"><span class="tag">PHASE '+String(i+1).padStart(2,'0')+'</span><span class="muted">'+esc(d.label||'')+'</span></div><h3 style="margin-top:14px">'+esc(d.title||'Untitled Phase')+'</h3>'+(d.detail?'<p>'+esc(d.detail)+'</p>':'')+'<div class="tasks">'+(tasks.length?tasks.map((t,j)=>'<label><input type="checkbox" data-phase-id="'+esc(d.id)+'" data-phase-index="'+i+'" data-task-id="'+esc(t.id)+'" data-task-index="'+j+'" '+((pr.tasks?.[t.id]??pr.tasks?.[String(j)])?'checked':'')+' '+(!writable()?'disabled':'')+'> '+esc(t.label)+'</label>').join(''):'<div class="muted">ไม่มี Checklist</div>')+'</div><label>สถานะ<select data-status-phase="'+esc(d.id)+'" data-phase-index="'+i+'" '+(!writable()?'disabled':'')+'><option value="todo" '+(st==='todo'?'selected':'')+'>ยังไม่เริ่ม</option><option value="doing" '+(st==='doing'?'selected':'')+'>กำลังดำเนินการ</option><option value="review" '+(st==='review'?'selected':'')+'>รอตรวจสอบ</option><option value="done" '+(st==='done'?'selected':'')+'>เสร็จสิ้น</option></select></label></article>';
   }).join(''):'<div class="card empty-roadmap" style="grid-column:1/-1">Project นี้ยังไม่มี Roadmap</div>';
-  $('editHint').textContent=role==='admin'?'Admin Preview — หน้านี้จำลองหน้าที่ลูกค้าเห็นแบบ Read-only':(writable()?'คุณมีสิทธิ์ Editor สามารถอัปเดต Checklist และสถานะได้':'ดูข้อมูลอย่างเดียว');
+  $('editHint').textContent=role==='admin'
+    ? 'Admin Preview — หน้านี้จำลองหน้าที่ลูกค้าเห็นแบบ Read-only'
+    : (data.status==='completed'?'Project นี้ปิดงานแล้ว ข้อมูลถูกเก็บไว้เพื่อดูย้อนหลัง':(writable()?'คุณมีสิทธิ์ Editor สามารถอัปเดต Checklist และสถานะได้':'ดูข้อมูลอย่างเดียว'));
   document.querySelectorAll('[data-task-id]').forEach(el=>el.addEventListener('change',async()=>{
     if(!writable())return;const p=deepCopy(data.phases||{}),id=el.dataset.phaseId,idx=el.dataset.phaseIndex,current=p[id]||p[idx]||{status:'todo',tasks:{}};current.tasks??={};current.tasks[el.dataset.taskId]=el.checked;p[id]=current;await writeProject({phases:p});
   }));
