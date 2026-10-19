@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepDesign Client Portal</title>
+<link rel="stylesheet" href="./portal-v6.css?v=20261019-1">
+</head>
+<body>
+<section id="setup" class="card login-card hidden"><h2>Firebase ยังไม่พร้อม</h2><p>กรุณาติดต่อ DeepDesign</p></section>
+<section id="login" class="card login-card hidden">
+  <div class="brand-sub" style="color:#53779e">DEEPDESIGN · CLIENT PORTAL</div><h2>เข้าสู่ระบบลูกค้า</h2>
+  <p class="muted">ใช้บัญชีที่ DeepDesign ส่งให้คุณ</p>
+  <form id="loginForm"><label>อีเมล<input id="email" type="email" required autocomplete="username"></label><label>รหัสผ่าน<input id="password" type="password" required autocomplete="current-password"></label><button type="submit">เข้าสู่ระบบ</button></form>
+  <p id="loginError" class="error"></p>
+</section>
+
+<div id="clientApp" class="hidden">
+  <header class="client-header">
+    <div class="row"><div><div class="brand-sub">DEEPDESIGN · CLIENT PORTAL</div><h1 id="clientTitle">Project Roadmap</h1><div id="clientMeta" style="color:#b9cade;margin-top:6px"></div></div><div id="identity"></div></div>
+  </header>
+  <div class="client-toolbar">
+    <div class="client-toolbar-inner">
+      <nav class="client-nav"><button data-client-view="overview" class="active">ภาพรวม</button><button data-client-view="roadmap">Roadmap</button><button data-client-view="notes">Notes</button></nav>
+      <div class="row"><select id="project" style="min-width:260px"></select><button id="adminConsole" class="secondary hidden" type="button">Admin Console</button><button id="logout" class="secondary" type="button">ออกจากระบบ</button></div>
+    </div>
+  </div>
+  <main class="client-main">
+    <section id="client-view-overview" class="client-view active">
+      <div class="metrics">
+        <div class="card"><div class="muted">Phase เสร็จ</div><div id="doneMetric" class="metric">0/0</div></div>
+        <div class="card"><div class="muted">Checklist</div><div id="taskMetric" class="metric">0/0</div></div>
+        <div class="card"><div class="muted">กำลังดำเนินการ</div><div id="doingMetric" class="metric">0</div></div>
+        <div class="card"><div class="muted">Project Status</div><div id="statusMetric" class="metric" style="font-size:20px">Active</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="row"><strong>ความคืบหน้า</strong><strong id="percent">0%</strong></div><div class="bar" style="margin:12px 0"><div id="fill" class="fill"></div></div><div id="sync" class="muted">กำลังเชื่อมต่อข้อมูล...</div></div>
+      <div class="card" style="margin-top:14px"><h3>สรุป Roadmap</h3><div id="overviewPhases" class="grid2" style="margin-top:12px"></div></div>
+    </section>
+
+    <section id="client-view-roadmap" class="client-view">
+      <div class="section-head"><div><h2>Roadmap & Checklist</h2><p id="editHint" class="muted"></p></div></div>
+      <div id="phases" class="roadmap-grid"></div><p id="message"></p>
+    </section>
+
+    <section id="client-view-notes" class="client-view">
+      <div class="section-head"><div><h2>Meeting Notes</h2><p class="muted">ข้อมูลและประเด็นติดตามของ Project</p></div></div>
+      <div class="card"><textarea id="notes" rows="12"></textarea><p><button id="saveNotes">บันทึก Notes</button></p></div>
+    </section>
+  </main>
+</div>
+<script src="./firebase-config.js?v=20261017-exact"></script>
+<script type="module" src="./client-v6.js?v=20261019-1"></script>
+</body></html>
