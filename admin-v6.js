@@ -1,6 +1,6 @@
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,createUserWithEmailAndPassword,sendPasswordResetEmail,deleteUser } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot,serverTimestamp,collection,query,where,getDocs,arrayUnion,arrayRemove } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot,serverTimestamp,collection,query,where,getDocs,arrayUnion,arrayRemove,writeBatch } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const $=id=>document.getElementById(id);
 const show=(id,on)=>$(id)?.classList.toggle('hidden',!on);
@@ -68,6 +68,54 @@ function fillProjectSettings(){
   $('accessProjectLabel').textContent=(data.name||projectId)+' · '+projectId;$('notes').value=data.notes||'';
 }
 async function writeProject(patch){if(!projectId)return;try{await updateDoc(doc(db,'projects',projectId),{...patch,updatedAt:serverTimestamp()});notify('บันทึกสำเร็จ');}catch(e){notify('บันทึกไม่สำเร็จ: '+e.message,true);}}
+
+async function deleteProjectPermanently(){
+  if(!projectId)return;
+  const targetId=projectId;
+  const targetName=data.name||targetId;
+  if((data.status||'active')!=='archived'){
+    projectNotify('เพื่อความปลอดภัย กรุณาเปลี่ยนสถานะ Project เป็น Archived และบันทึกก่อนลบถาวร',true);
+    switchView('projects');
+    return;
+  }
+  const typed=prompt('การลบนี้ย้อนกลับไม่ได้\n\nพิมพ์ Project ID เพื่อยืนยันการลบ:\n'+targetId);
+  if(typed===null)return;
+  if(typed.trim()!==targetId){
+    projectNotify('ยกเลิกการลบ: Project ID ที่พิมพ์ไม่ตรง',true);
+    return;
+  }
+  if(!confirm('ยืนยันลบ “'+targetName+'” ถาวร?\nระบบจะถอนสิทธิ์ Project นี้ออกจากลูกค้าทุกคนด้วย'))return;
+  const btn=$('deleteProject');
+  btn.disabled=true;
+  try{
+    projectNotify('กำลังลบ Project และถอนสิทธิ์ลูกค้า...');
+    const assigned=await getDocs(query(collection(db,'members'),where('projects','array-contains',targetId)));
+    const memberDocs=assigned.docs.filter(d=>d.data().role!=='admin');
+    const chunkSize=400;
+    for(let start=0;start<memberDocs.length;start+=chunkSize){
+      const batch=writeBatch(db);
+      memberDocs.slice(start,start+chunkSize).forEach(m=>{
+        batch.update(m.ref,{projects:arrayRemove(targetId),updatedAt:serverTimestamp()});
+      });
+      await batch.commit();
+    }
+    const finalBatch=writeBatch(db);
+    finalBatch.delete(doc(db,'projects',targetId));
+    await finalBatch.commit();
+
+    if(projectUnsub){projectUnsub();projectUnsub=null;}
+    if(membersUnsub){membersUnsub();membersUnsub=null;}
+    const next=projectCatalog.find(p=>p.id!==targetId);
+    pendingProjectSelect=next?.id||null;
+    projectId=null;data={};
+    history.replaceState(null,'',location.pathname);
+    projectNotify('ลบ Project “'+targetName+'” ถาวรแล้ว และถอนสิทธิ์ออกจากลูกค้า '+memberDocs.length+' บัญชี');
+  }catch(e){
+    projectNotify('ลบ Project ไม่สำเร็จ: '+e.message,true);
+  }finally{
+    btn.disabled=false;
+  }
+}
 
 function resetBuilder(){builderPhases=deepCopy(projectDefs());renderBuilder();builderNotify(Array.isArray(data.phaseDefinitions)?'โหลดโครงสร้างล่าสุดแล้ว':'Project เดิมกำลังใช้ Legacy Template — กดบันทึกเพื่อแปลงเป็น Dynamic Phase');}
 function renderBuilder(){
@@ -137,6 +185,7 @@ if(!cfg?.apiKey||!cfg?.projectId){show('setup',true);}else{
   $('newProjectId').addEventListener('input',()=>{projectIdManuallyEdited=true;$('newProjectId').value=cleanProjectId($('newProjectId').value);});
   $('projectCreateForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('newProjectName').value.trim(),id=cleanProjectId($('newProjectId').value),mode=$('newProjectTemplate').value;if(!name||!id)return projectNotify('กรุณากรอกชื่อและ Project ID',true);try{if((await getDoc(doc(db,'projects',id))).exists())throw new Error('Project ID นี้มีอยู่แล้ว');let defs=[];if(mode==='marketing')defs=deepCopy(legacyTemplate);if(mode==='current')defs=deepCopy(projectDefs());await setDoc(doc(db,'projects',id),{name,status:'active',phaseDefinitions:defs,phaseSchemaVersion:2,phases:{},kpi:{},notes:'',createdAt:serverTimestamp(),createdBy:currentUser.uid,updatedAt:serverTimestamp()});pendingProjectSelect=id;projectNotify('สร้าง Project สำเร็จ');$('projectCreateForm').reset();$('newProjectTemplate').value='blank';projectIdManuallyEdited=false;}catch(err){projectNotify('สร้าง Project ไม่สำเร็จ: '+err.message,true);}});
   $('saveProjectSettings').onclick=async()=>{if(!projectId)return;try{await updateDoc(doc(db,'projects',projectId),{name:$('editProjectName').value.trim()||data.name,status:$('editProjectStatus').value,updatedAt:serverTimestamp()});projectNotify('บันทึก Project settings แล้ว');}catch(e){projectNotify('บันทึกไม่สำเร็จ: '+e.message,true);}};
+  $('deleteProject').onclick=()=>deleteProjectPermanently();
   $('addPhase').onclick=()=>{builderPhases.push({id:uid('phase'),title:'',label:'',detail:'',tasks:[]});renderBuilder();};
   $('resetBuilder').onclick=()=>resetBuilder();
   $('saveBuilder').onclick=async()=>{if(!projectId)return;const defs=normalizedBuilder();if(defs.length>30)return builderNotify('กำหนดได้สูงสุด 30 Phase',true);try{await updateDoc(doc(db,'projects',projectId),{phaseDefinitions:defs,phaseSchemaVersion:2,phases:reconcileProgress(defs),updatedAt:serverTimestamp()});builderNotify('บันทึกโครงสร้าง Roadmap สำเร็จ');}catch(e){builderNotify('บันทึก Builder ไม่สำเร็จ: '+e.message,true);}};
