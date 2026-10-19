@@ -110,7 +110,9 @@ service cloud.firestore {
           ])
           && validProjectShape());
 
-      allow delete: if false;
+      // Permanent deletion is restricted to a signed-in DeepDesign admin.
+      // The Admin Console additionally requires the project to be Archived and typed confirmation.
+      allow delete: if isAdmin();
     }
 
     match /{document=**} {
