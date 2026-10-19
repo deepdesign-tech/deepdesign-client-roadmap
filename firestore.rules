@@ -38,7 +38,8 @@ service cloud.firestore {
       return request.resource.data.keys().hasAll(['name', 'phases', 'kpi', 'notes'])
         && request.resource.data.keys().hasOnly([
           'name', 'phases', 'phaseDefinitions', 'phaseSchemaVersion',
-          'kpi', 'notes', 'status', 'createdAt', 'createdBy', 'updatedAt'
+          'kpi', 'notes', 'status', 'createdAt', 'createdBy', 'updatedAt',
+          'closedAt', 'closedBy', 'reopenedAt'
         ])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
@@ -53,7 +54,7 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['phaseSchemaVersion'])
           || request.resource.data.phaseSchemaVersion is int)
         && (!request.resource.data.keys().hasAny(['status'])
-          || request.resource.data.status in ['active', 'paused', 'archived']);
+          || request.resource.data.status in ['active', 'paused', 'completed', 'archived']);
     }
 
     function validManagedMember() {
@@ -105,6 +106,7 @@ service cloud.firestore {
       // Editors can update progress, KPI and notes but cannot alter the Roadmap structure.
       allow update: if (isAdmin() && validProjectShape())
         || (editor(projectId)
+          && resource.data.status == 'active'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'phases', 'kpi', 'notes', 'updatedAt'
           ])
